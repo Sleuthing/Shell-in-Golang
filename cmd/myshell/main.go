@@ -15,7 +15,7 @@ func main() {
 	for i := 0; i < 100; i++ {
 		fmt.Fprint(os.Stdout, "$ ")
 		command, err := bufio.NewReader(os.Stdin).ReadString('\n')
-		if command[:len(command)-1] == "exit" {
+		if command[:len(command)-1] == "exit 0" {
 			os.Exit(0)
 		}
 		if err != nil {
