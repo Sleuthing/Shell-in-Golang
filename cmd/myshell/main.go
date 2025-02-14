@@ -13,10 +13,9 @@ import (
 var builtin = []string{"exit", "echo", "type"}
 
 func process_command(command string) (string, string) {
-	fmt.Println(strings.Count(command, " "))
 	if strings.Count(command, " ") >= 1 {
 		chunks := strings.Split(command, " ")
-		return chunks[0], chunks[1]
+		return chunks[0], chunks[1][:len(chunks[1])-1]
 	}
 	return command[:len(command)-1], ""
 }
