@@ -19,7 +19,7 @@ func main() {
 		case "exit":
 			os.Exit(0)
 		case "echo":
-			fmt.Println(cmd[5:])
+			fmt.Println(command[5:])
 		}
 
 		if err != nil {
