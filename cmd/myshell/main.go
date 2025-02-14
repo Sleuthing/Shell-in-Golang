@@ -17,6 +17,7 @@ func main() {
 		command, err := bufio.NewReader(os.Stdin).ReadString('\n')
 		if command[:len(command)-1] == "exit 0" {
 			os.Exit(0)
+			os.Exit(1)
 		}
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "Error reading input:", err)
