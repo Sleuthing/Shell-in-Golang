@@ -24,7 +24,7 @@ func main() {
 		case "exit":
 			os.Exit(0)
 		case "echo":
-			fmt.Println(arg)
+			fmt.Println(command[:len(command)-1])
 		case "type":
 			if slices.Contains(builtin, arg) {
 				fmt.Println(arg + " is a shell builtin")
