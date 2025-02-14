@@ -19,14 +19,14 @@ func main() {
 		fmt.Fprint(os.Stdout, "$ ")
 		command, err := bufio.NewReader(os.Stdin).ReadString('\n')
 		chunks := strings.Split(command, " ")
-		cmd, arg := chunks[0], chunks[1]
+		cmd, arg := chunks[0], chunks[1][:len(chunks[1])-1]
 		switch cmd {
 		case "exit":
 			os.Exit(0)
 		case "echo":
-			fmt.Println(command[5 : len(command)-1])
+			fmt.Println(arg)
 		case "type":
-			if slices.Contains(builtin, command[5:len(command)-1]) {
+			if slices.Contains(builtin, arg) {
 				fmt.Println(arg + " is a shell builtin")
 			} else {
 				fmt.Println(arg + ": not found")
