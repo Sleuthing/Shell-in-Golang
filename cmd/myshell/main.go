@@ -12,14 +12,22 @@ import (
 // var _ = fmt.Fprint
 var builtin = []string{"exit", "echo", "type"}
 
+func process_command(command string) (string, string) {
+	if strings.Count(command, " ") >= 1 {
+		chunks := strings.Split(command, " ")
+		return chunks[0], chunks[1]
+	}
+	return command[:len(command)-1], ""
+}
+
 func main() {
 	// Uncomment this block to pass the first stage
 
 	for i := 0; i < 100; i++ {
 		fmt.Fprint(os.Stdout, "$ ")
 		command, err := bufio.NewReader(os.Stdin).ReadString('\n')
-		chunks := strings.Split(command, " ")
-		cmd, arg := chunks[0], chunks[1][:len(chunks[1])-1]
+		cmd, arg := process_command(command)
+
 		switch cmd {
 		case "exit":
 			os.Exit(0)
