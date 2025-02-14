@@ -14,15 +14,13 @@ var builtin = []string{"exit", "echo", "type"}
 
 func process_command(command string) (string, string) {
 	if strings.Count(command, " ") >= 1 {
-		chunks := strings.Split(command, " ")
+		chunks := strings.SplitN(command, " ", 2)
 		return chunks[0], chunks[1][:len(chunks[1])-1]
 	}
 	return command[:len(command)-1], ""
 }
 
 func main() {
-	// Uncomment this block to pass the first stage
-
 	for i := 0; i < 100; i++ {
 		fmt.Fprint(os.Stdout, "$ ")
 		command, err := bufio.NewReader(os.Stdin).ReadString('\n')
@@ -32,7 +30,7 @@ func main() {
 		case "exit":
 			os.Exit(0)
 		case "echo":
-			fmt.Println(command[5 : len(command)-1])
+			fmt.Println(arg)
 		case "type":
 			if slices.Contains(builtin, arg) {
 				fmt.Println(arg + " is a shell builtin")
