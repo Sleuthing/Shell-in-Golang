@@ -48,7 +48,4 @@ func main() {
 		}
 
 	}
-
-	// Wait for user input
-	//bufio.NewReader(os.Stdin).ReadString('\n')
 }

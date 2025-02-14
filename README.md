@@ -1,3 +1,5 @@
+# Shell-in-Golang
+Learning Go through a Codecrafters project
 [![progress-banner](https://backend.codecrafters.io/progress/shell/02ce821e-9a6b-4c7e-9775-f796b38b094a)](https://app.codecrafters.io/users/codecrafters-bot?r=2qF)
 
 This is a starting point for Go solutions to the
