@@ -20,13 +20,15 @@ func main() {
 			os.Exit(0)
 		case "echo":
 			fmt.Println(command[5 : len(command)-1])
+		default:
+			fmt.Println(command[:len(command)-1] + ": command not found")
 		}
 
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "Error reading input:", err)
 			os.Exit(1)
 		}
-		fmt.Println(command[:len(command)-1] + ": command not found")
+
 	}
 
 	// Wait for user input
