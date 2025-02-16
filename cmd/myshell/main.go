@@ -40,10 +40,10 @@ func main() {
 				for i := 0; i < len(dirs); i++ {
 					search_path := dirs[i] + string(os.PathSeparator) + arg
 					if _, search_err := os.Stat(search_path); search_err == nil {
-						fmt.Println("valid_command is " + search_path)
+						fmt.Println(arg + " is " + search_path)
 						break
 					} else if matches, _ := filepath.Glob(search_path + ".*"); len(matches) > 0 {
-						fmt.Println("valid_command is " + matches[0])
+						fmt.Println(arg + " is " + matches[0])
 						break
 					} else if i+1 == len(dirs) {
 						fmt.Println(arg + ": not found")
