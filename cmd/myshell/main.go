@@ -38,7 +38,7 @@ func main() {
 			} else {
 				dirs := strings.Split(PATH, string(filepath.ListSeparator))
 				for i := 0; i < len(dirs); i++ {
-					fmt.Println(dirs[i])
+					fmt.Println(dirs[i] + "\\" + arg)
 					search_path := dirs[i] + "\\" + arg
 					if _, search_err := os.Stat(search_path); search_err == nil {
 						fmt.Println("valid_command is " + search_path)
