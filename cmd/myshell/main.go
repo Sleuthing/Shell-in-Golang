@@ -67,7 +67,7 @@ func main() {
 				command_result := exec.Command(command_keyword, arg)
 				output, err := command_result.Output()
 				if err == nil {
-					fmt.Println(string(output))
+					fmt.Print(string(output))
 				} else {
 					fmt.Fprintln(os.Stderr, "Error reading input:", err)
 				}
