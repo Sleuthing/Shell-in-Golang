@@ -64,7 +64,7 @@ func main() {
 				fmt.Println(full_command[:len(full_command)-1] + ": command not found")
 			} else {
 				//ToDo: handle multiple argments
-				command_result := exec.Command(search_result, arg)
+				command_result := exec.Command(command_keyword, arg)
 				output, err := command_result.Output()
 				if err == nil {
 					fmt.Println(string(output))
