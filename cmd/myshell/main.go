@@ -67,7 +67,7 @@ func main() {
 				command_result := exec.Command(search_result, arg)
 				output, err := command_result.Output()
 				if err == nil {
-					fmt.Println(output)
+					fmt.Println(string(output))
 				} else {
 					fmt.Fprintln(os.Stderr, "Error reading input:", err)
 				}
