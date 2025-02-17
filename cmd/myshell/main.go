@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -19,7 +20,20 @@ func process_command(command string) (string, string) {
 		chunks := strings.SplitN(command, " ", 2)
 		return chunks[0], strings.TrimSpace(chunks[1][:len(chunks[1])-1])
 	}
-	return command[:len(command)-1], ""
+	return strings.TrimSpace(command[:len(command)-1]), ""
+}
+
+func search_executable_path(exe_name string) string {
+	dirs := strings.Split(PATH, string(filepath.ListSeparator))
+	for i := 0; i < len(dirs); i++ {
+		search_path := dirs[i] + string(os.PathSeparator) + exe_name
+		if _, search_err := os.Stat(search_path); search_err == nil {
+			return search_path
+		} else if matches, _ := filepath.Glob(search_path + ".*"); len(matches) > 0 {
+			return matches[0]
+		}
+	}
+	return ""
 }
 
 func main() {
@@ -36,25 +50,28 @@ func main() {
 			if slices.Contains(builtin, arg) {
 				fmt.Println(arg + " is a shell builtin")
 			} else {
-				dirs := strings.Split(PATH, string(filepath.ListSeparator))
-				for i := 0; i < len(dirs); i++ {
-					search_path := dirs[i] + string(os.PathSeparator) + arg
-					if _, search_err := os.Stat(search_path); search_err == nil {
-						fmt.Println(arg + " is " + search_path)
-						break
-					} else if matches, _ := filepath.Glob(search_path + ".*"); len(matches) > 0 {
-						fmt.Println(arg + " is " + matches[0])
-						break
-					} else if i+1 == len(dirs) {
-						fmt.Println(arg + ": not found")
-					}
-
+				search_result := search_executable_path(arg)
+				if search_result == "" {
+					fmt.Println(arg + ": not found")
+				} else {
+					fmt.Println(arg + " is " + search_result)
 				}
-
 			}
 
 		default:
-			fmt.Println(full_command[:len(full_command)-1] + ": command not found")
+			search_result := search_executable_path(command_keyword)
+			if search_result == "" {
+				fmt.Println(full_command[:len(full_command)-1] + ": command not found")
+			} else {
+				//ToDo: handle multiple argments
+				command_result := exec.Command(command_keyword, arg)
+				output, err := command_result.Output()
+				if err == nil {
+					fmt.Print(string(output))
+				} else {
+					fmt.Fprintln(os.Stderr, "Error reading input:", err)
+				}
+			}
 		}
 
 		if err != nil {
