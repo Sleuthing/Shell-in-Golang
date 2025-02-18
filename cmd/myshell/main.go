@@ -15,6 +15,13 @@ import (
 var builtin = []string{"exit", "echo", "type", "pwd", "cd"}
 var PATH = os.Getenv("PATH")
 
+func path_is_valid(path string) bool {
+	if _, search_err := os.Stat(path); search_err == nil {
+		return true
+	}
+	return false
+}
+
 func process_command(command string) (string, string) {
 	if strings.Count(command, " ") >= 1 {
 		chunks := strings.SplitN(command, " ", 2)
@@ -27,7 +34,7 @@ func search_executable_path(exe_name string) string {
 	dirs := strings.Split(PATH, string(filepath.ListSeparator))
 	for i := 0; i < len(dirs); i++ {
 		search_path := dirs[i] + string(os.PathSeparator) + exe_name
-		if _, search_err := os.Stat(search_path); search_err == nil {
+		if path_is_valid(search_path) {
 			return search_path
 		} else if matches, _ := filepath.Glob(search_path + ".*"); len(matches) > 0 {
 			return matches[0]
@@ -63,11 +70,10 @@ func main() {
 			print_if_error_nil(directory, err)
 			fmt.Println()
 		case "cd":
-			search_result := search_executable_path(arg)
-			if search_result == "" {
-				fmt.Println(clean_string(full_command), ": No such file or directory")
+			if path_is_valid(arg) {
+				os.Chdir(arg)
 			} else {
-				os.Chdir(search_result)
+				fmt.Println(command_keyword + ": " + arg + ": " + "No such file or directory")
 			}
 		case "type":
 			if slices.Contains(builtin, arg) {
