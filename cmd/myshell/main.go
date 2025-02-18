@@ -12,7 +12,7 @@ import (
 
 // Ensures gofmt doesn't remove the "fmt" import in stage 1 (feel free to remove this!)
 // var _ = fmt.Fprint
-var builtin = []string{"exit", "echo", "type", "pwd"}
+var builtin = []string{"exit", "echo", "type", "pwd", "cd"}
 var PATH = os.Getenv("PATH")
 
 func process_command(command string) (string, string) {
@@ -44,6 +44,10 @@ func print_if_error_nil(output string, err error) {
 	}
 }
 
+func clean_string(str string) string {
+	return str[:len(str)-1]
+}
+
 func main() {
 	for i := 0; i < 100; i++ {
 		fmt.Fprint(os.Stdout, "$ ")
@@ -58,6 +62,13 @@ func main() {
 			directory, err := os.Getwd()
 			print_if_error_nil(directory, err)
 			fmt.Println()
+		case "cd":
+			search_result := search_executable_path(arg)
+			if search_result == "" {
+				fmt.Println(clean_string(full_command), ": No such file or directory")
+			} else {
+				os.Chdir(search_result)
+			}
 		case "type":
 			if slices.Contains(builtin, arg) {
 				fmt.Println(arg + " is a shell builtin")
@@ -72,7 +83,7 @@ func main() {
 		default:
 			search_result := search_executable_path(command_keyword)
 			if search_result == "" {
-				fmt.Println(full_command[:len(full_command)-1] + ": command not found")
+				fmt.Println(clean_string(full_command) + ": command not found")
 			} else {
 				//ToDo: handle multiple argments
 				command_result := exec.Command(command_keyword, arg)
