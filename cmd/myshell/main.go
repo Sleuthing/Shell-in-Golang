@@ -38,7 +38,7 @@ func search_executable_path(exe_name string) string {
 
 func print_if_error_nil(output string, err error) {
 	if err == nil {
-		fmt.Println(string(output))
+		fmt.Print(string(output))
 	} else {
 		fmt.Fprintln(os.Stderr, "Error executing input:", err)
 	}
@@ -57,9 +57,7 @@ func main() {
 		case "pwd":
 			directory, err := os.Getwd()
 			print_if_error_nil(directory, err)
-			// if err == nil {
-			// 	fmt.Println(directory)
-			// }
+			fmt.Println()
 		case "type":
 			if slices.Contains(builtin, arg) {
 				fmt.Println(arg + " is a shell builtin")
@@ -71,7 +69,6 @@ func main() {
 					fmt.Println(arg + " is " + search_result)
 				}
 			}
-
 		default:
 			search_result := search_executable_path(command_keyword)
 			if search_result == "" {
