@@ -15,6 +15,18 @@ import (
 var builtin = []string{"exit", "echo", "type", "pwd", "cd"}
 var PATH = os.Getenv("PATH")
 
+func print_if_error_nil(output string, err error) {
+	if err == nil {
+		fmt.Print(string(output))
+	} else {
+		fmt.Fprintln(os.Stderr, "Error executing input:", err)
+	}
+}
+
+func clean_string(str string) string {
+	return str[:len(str)-1]
+}
+
 func path_is_valid(path string) bool {
 	if _, search_err := os.Stat(path); search_err == nil {
 		return true
@@ -41,18 +53,6 @@ func search_executable_path(exe_name string) string {
 		}
 	}
 	return ""
-}
-
-func print_if_error_nil(output string, err error) {
-	if err == nil {
-		fmt.Print(string(output))
-	} else {
-		fmt.Fprintln(os.Stderr, "Error executing input:", err)
-	}
-}
-
-func clean_string(str string) string {
-	return str[:len(str)-1]
 }
 
 func main() {
