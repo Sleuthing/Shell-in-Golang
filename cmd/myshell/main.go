@@ -14,6 +14,7 @@ import (
 // var _ = fmt.Fprint
 var builtin = []string{"exit", "echo", "type", "pwd", "cd"}
 var PATH = os.Getenv("PATH")
+var HOME, _ = os.UserHomeDir()
 
 func print_if_error_nil(output string, err error) {
 	if err == nil {
@@ -70,7 +71,9 @@ func main() {
 			print_if_error_nil(directory, err)
 			fmt.Println()
 		case "cd":
-			if path_is_valid(arg) {
+			if arg == "~" {
+				os.Chdir(HOME)
+			} else if path_is_valid(arg) {
 				os.Chdir(arg)
 			} else {
 				fmt.Println(command_keyword + ": " + arg + ": " + "No such file or directory")
