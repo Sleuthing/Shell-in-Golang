@@ -12,7 +12,7 @@ import (
 
 // Ensures gofmt doesn't remove the "fmt" import in stage 1 (feel free to remove this!)
 // var _ = fmt.Fprint
-var builtin = []string{"exit", "echo", "type"}
+var builtin = []string{"exit", "echo", "type", "pwd"}
 var PATH = os.Getenv("PATH")
 
 func process_command(command string) (string, string) {
@@ -36,6 +36,14 @@ func search_executable_path(exe_name string) string {
 	return ""
 }
 
+func print_if_error_nil(output string, err error) {
+	if err == nil {
+		fmt.Println(string(output))
+	} else {
+		fmt.Fprintln(os.Stderr, "Error executing input:", err)
+	}
+}
+
 func main() {
 	for i := 0; i < 100; i++ {
 		fmt.Fprint(os.Stdout, "$ ")
@@ -46,6 +54,12 @@ func main() {
 			os.Exit(0)
 		case "echo":
 			fmt.Println(arg)
+		case "pwd":
+			directory, err := os.Getwd()
+			print_if_error_nil(directory, err)
+			// if err == nil {
+			// 	fmt.Println(directory)
+			// }
 		case "type":
 			if slices.Contains(builtin, arg) {
 				fmt.Println(arg + " is a shell builtin")
@@ -66,11 +80,12 @@ func main() {
 				//ToDo: handle multiple argments
 				command_result := exec.Command(command_keyword, arg)
 				output, err := command_result.Output()
-				if err == nil {
-					fmt.Print(string(output))
-				} else {
-					fmt.Fprintln(os.Stderr, "Error reading input:", err)
-				}
+				print_if_error_nil(string(output), err)
+				// if err == nil {
+				// 	fmt.Print(string(output))
+				// } else {
+				// 	fmt.Fprintln(os.Stderr, "Error executing input:", err)
+				// }
 			}
 		}
 
