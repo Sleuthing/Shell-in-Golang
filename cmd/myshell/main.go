@@ -6,15 +6,16 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strings"
 )
 
-// Ensures gofmt doesn't remove the "fmt" import in stage 1 (feel free to remove this!)
-// var _ = fmt.Fprint
 var builtin = []string{"exit", "echo", "type", "pwd", "cd"}
 var PATH = os.Getenv("PATH")
 var HOME, _ = os.UserHomeDir()
+var check_redir = regexp.MustCompile(" > | 1> ")
+var original_stdout = os.Stdout
 
 func print_if_error_nil(output string, err error) {
 	if err == nil {
@@ -38,9 +39,9 @@ func path_is_valid(path string) bool {
 func process_command(command string) (string, string) {
 	if strings.Count(command, " ") >= 1 {
 		chunks := strings.SplitN(command, " ", 2)
-		return chunks[0], strings.TrimSpace(chunks[1][:len(chunks[1])-1])
+		return chunks[0], strings.TrimSpace(clean_string(chunks[1]))
 	}
-	return strings.TrimSpace(command[:len(command)-1]), ""
+	return strings.TrimSpace(clean_string(command)), ""
 }
 
 func search_executable_path(exe_name string) string {
@@ -56,11 +57,45 @@ func search_executable_path(exe_name string) string {
 	return ""
 }
 
+func check_for_stdout_redir(arg string) (string, string) {
+	if check_redir.MatchString(arg) {
+		arg := strings.Replace(arg, " 1> ", " > ", -1)
+		chunks := strings.Split(arg, " > ")
+		return chunks[0], chunks[1]
+	}
+	return arg, ""
+}
+
+func get_output_file(output_path string) *os.File {
+	if output_path != "" {
+		outfile, err := os.Create(output_path)
+
+		if err != nil {
+			panic(err)
+		}
+
+		return outfile
+	}
+	return nil
+}
+
+// type functionality func(string)
+
+// func echo_func(arg string) {}
+
+// func stdout_func(fn functionality) { return fn() }
+
 func main() {
 	for i := 0; i < 100; i++ {
 		fmt.Fprint(os.Stdout, "$ ")
 		full_command, err := bufio.NewReader(os.Stdin).ReadString('\n')
 		command_keyword, arg := process_command(full_command)
+		arg, output_path := check_for_stdout_redir(arg)
+		var outfile = get_output_file(output_path)
+		if outfile != nil {
+			os.Stdout = outfile
+			defer outfile.Close()
+		}
 		switch command_keyword {
 		case "exit":
 			os.Exit(0)
@@ -96,14 +131,21 @@ func main() {
 			} else {
 				//ToDo: handle multiple argments
 				command_result := exec.Command(command_keyword, arg)
+				// if outfile != nil {
+				// 	if path_is_valid(arg) {
+
+				// 		//cmd.Stderr = os.Stderr
+				// 		command_result.Run()
+				// 		command_result.Stdout = os.Stdout
+				// 	} else {
+				// 		fmt.Println("Path is not valid: ", arg)
+				// 	}
+				// } else {
 				output, err := command_result.Output()
 				print_if_error_nil(string(output), err)
-				// if err == nil {
-				// 	fmt.Print(string(output))
-				// } else {
-				// 	fmt.Fprintln(os.Stderr, "Error executing input:", err)
 				// }
 			}
+
 		}
 
 		if err != nil {
@@ -111,6 +153,7 @@ func main() {
 			fmt.Fprintln(os.Stderr, "Error reading input:", err)
 			os.Exit(1)
 		}
-
+		os.Stdout = original_stdout
+		//outfile.Close()
 	}
 }
