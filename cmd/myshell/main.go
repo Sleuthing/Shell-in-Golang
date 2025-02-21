@@ -84,8 +84,6 @@ func main() {
 		fmt.Fprint(os.Stdout, "$ ")
 		full_command, err := bufio.NewReader(os.Stdin).ReadString('\n')
 		command_keyword, arg := process_command(full_command)
-		fmt.Println(command_keyword)
-		fmt.Println(arg)
 		arg, output_path := check_for_stdout_redir(arg)
 		var outfile = get_output_file(output_path)
 		if outfile != nil {
