@@ -79,17 +79,13 @@ func get_output_file(output_path string) *os.File {
 	return nil
 }
 
-// type functionality func(string)
-
-// func echo_func(arg string) {}
-
-// func stdout_func(fn functionality) { return fn() }
-
 func main() {
 	for i := 0; i < 100; i++ {
 		fmt.Fprint(os.Stdout, "$ ")
 		full_command, err := bufio.NewReader(os.Stdin).ReadString('\n')
 		command_keyword, arg := process_command(full_command)
+		fmt.Println(command_keyword)
+		fmt.Println(arg)
 		arg, output_path := check_for_stdout_redir(arg)
 		var outfile = get_output_file(output_path)
 		if outfile != nil {
@@ -129,21 +125,9 @@ func main() {
 			if search_result == "" {
 				fmt.Println(clean_string(full_command) + ": command not found")
 			} else {
-				//ToDo: handle multiple argments
-				command_result := exec.Command(command_keyword, arg)
-				// if outfile != nil {
-				// 	if path_is_valid(arg) {
-
-				// 		//cmd.Stderr = os.Stderr
-				// 		command_result.Run()
-				// 		command_result.Stdout = os.Stdout
-				// 	} else {
-				// 		fmt.Println("Path is not valid: ", arg)
-				// 	}
-				// } else {
+				command_result := exec.Command(command_keyword, strings.Split(arg, " ")...)
 				output, err := command_result.Output()
 				print_if_error_nil(string(output), err)
-				// }
 			}
 
 		}
@@ -154,6 +138,5 @@ func main() {
 			os.Exit(1)
 		}
 		os.Stdout = original_stdout
-		//outfile.Close()
 	}
 }
