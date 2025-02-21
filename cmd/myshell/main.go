@@ -94,7 +94,7 @@ func main() {
 		case "exit":
 			os.Exit(0)
 		case "echo":
-			fmt.Println(arg)
+			fmt.Println(strings.Trim(arg, "'"))
 		case "pwd":
 			directory, err := os.Getwd()
 			print_if_error_nil(directory, err)
