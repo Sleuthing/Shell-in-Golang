@@ -18,6 +18,8 @@ var check_redir = regexp.MustCompile(" > | 1> ")
 var original_stdout = os.Stdout
 
 // print functions
+
+// print output if no error exists otherwise print error
 func print_output_if_err_nil(output string, err error) {
 	if err == nil {
 		fmt.Print(string(output))
@@ -31,6 +33,7 @@ func print_no_such_file_or_directory(cmd_keywrd string, dir string) {
 }
 
 // boolean functions
+
 func path_is_valid(path string) bool {
 	if _, search_err := os.Stat(path); search_err == nil {
 		return true
@@ -42,10 +45,10 @@ func is_builtin(cmd_keywrd string) bool {
 	return slices.Contains(builtin, cmd_keywrd)
 }
 
+// helper functions
+
 func clean_command_clause(str string) string {
-	fmt.Println(len(str))
 	str = strings.TrimSpace(strings.Trim(str, "\n"))
-	fmt.Println(len(str))
 	return str
 }
 
@@ -109,9 +112,7 @@ func main() {
 		full_command, err := bufio.NewReader(os.Stdin).ReadString('\n')
 		clean_command := clean_command_clause(full_command)
 		command_sentence, output_path := check_for_stdout_redir(clean_command)
-		// fmt.Printf("Entire first part: %s \nOutput path: %s \n", command_sentence, output_path)
 		command_keyword, arg_clause := process_command(command_sentence)
-		// fmt.Printf("Command: %s \narg_clause: %s \n", command_keyword, arg_clause)
 		var outfile = get_output_file(output_path)
 		if outfile != nil {
 			os.Stdout = outfile
