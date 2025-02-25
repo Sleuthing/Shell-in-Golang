@@ -17,7 +17,8 @@ var HOME, _ = os.UserHomeDir()
 var check_redir = regexp.MustCompile(" > | 1> ")
 var original_stdout = os.Stdout
 
-func print_if_error_nil(output string, err error) {
+// print functions
+func print_output_if_err_nil(output string, err error) {
 	if err == nil {
 		fmt.Print(string(output))
 	} else {
@@ -25,10 +26,11 @@ func print_if_error_nil(output string, err error) {
 	}
 }
 
-func clean_string(str string) string {
-	return str[:len(str)-1]
+func print_no_such_file_or_directory(cmd_keywrd string, dir string) {
+	fmt.Println(cmd_keywrd + ": " + dir + ": " + "No such file or directory")
 }
 
+// boolean functions
 func path_is_valid(path string) bool {
 	if _, search_err := os.Stat(path); search_err == nil {
 		return true
@@ -36,12 +38,23 @@ func path_is_valid(path string) bool {
 	return false
 }
 
+func is_builtin(cmd_keywrd string) bool {
+	return slices.Contains(builtin, cmd_keywrd)
+}
+
+func clean_command_clause(str string) string {
+	fmt.Println(len(str))
+	str = strings.TrimSpace(strings.Trim(str, "\n"))
+	fmt.Println(len(str))
+	return str
+}
+
 func process_command(command string) (string, string) {
 	if strings.Count(command, " ") >= 1 {
 		chunks := strings.SplitN(command, " ", 2)
-		return chunks[0], strings.TrimSpace(clean_string(chunks[1]))
+		return chunks[0], strings.TrimSpace(chunks[1])
 	}
-	return strings.TrimSpace(clean_string(command)), ""
+	return strings.TrimSpace(command), ""
 }
 
 func search_executable_path(exe_name string) string {
@@ -79,12 +92,26 @@ func get_output_file(output_path string) *os.File {
 	return nil
 }
 
+// all checks if all elements in the slice satisfy the condition defined by fn
+// and returns problematic element if found
+func all[T any](slice []T, fn func(T) bool) (bool, *T) {
+	for _, item := range slice {
+		if !fn(item) {
+			return false, &item
+		}
+	}
+	return true, nil
+}
+
 func main() {
 	for i := 0; i < 100; i++ {
 		fmt.Fprint(os.Stdout, "$ ")
 		full_command, err := bufio.NewReader(os.Stdin).ReadString('\n')
-		command_keyword, arg := process_command(full_command)
-		arg, output_path := check_for_stdout_redir(arg)
+		clean_command := clean_command_clause(full_command)
+		command_sentence, output_path := check_for_stdout_redir(clean_command)
+		// fmt.Printf("Entire first part: %s \nOutput path: %s \n", command_sentence, output_path)
+		command_keyword, arg_clause := process_command(command_sentence)
+		// fmt.Printf("Command: %s \narg_clause: %s \n", command_keyword, arg_clause)
 		var outfile = get_output_file(output_path)
 		if outfile != nil {
 			os.Stdout = outfile
@@ -94,38 +121,51 @@ func main() {
 		case "exit":
 			os.Exit(0)
 		case "echo":
-			fmt.Println(strings.Trim(arg, "'"))
+			fmt.Println(strings.Trim(arg_clause, "'"))
 		case "pwd":
 			directory, err := os.Getwd()
-			print_if_error_nil(directory, err)
+			print_output_if_err_nil(directory, err)
 			fmt.Println()
 		case "cd":
-			if arg == "~" {
+			if arg_clause == "~" {
 				os.Chdir(HOME)
-			} else if path_is_valid(arg) {
-				os.Chdir(arg)
+			} else if path_is_valid(arg_clause) {
+				os.Chdir(arg_clause)
 			} else {
-				fmt.Println(command_keyword + ": " + arg + ": " + "No such file or directory")
+				print_no_such_file_or_directory(command_keyword, arg_clause)
 			}
 		case "type":
-			if slices.Contains(builtin, arg) {
-				fmt.Println(arg + " is a shell builtin")
+			if is_builtin(arg_clause) {
+				fmt.Println(arg_clause + " is a shell builtin")
 			} else {
-				search_result := search_executable_path(arg)
+				search_result := search_executable_path(arg_clause)
 				if search_result == "" {
-					fmt.Println(arg + ": not found")
+					fmt.Println(arg_clause + ": not found")
 				} else {
-					fmt.Println(arg + " is " + search_result)
+					fmt.Println(arg_clause + " is " + search_result)
 				}
 			}
 		default:
 			search_result := search_executable_path(command_keyword)
 			if search_result == "" {
-				fmt.Println(clean_string(full_command) + ": command not found")
+				fmt.Println(clean_command + ": command not found")
 			} else {
-				command_result := exec.Command(command_keyword, strings.Split(arg, " ")...)
-				output, err := command_result.Output()
-				print_if_error_nil(string(output), err)
+				args := strings.Split(arg_clause, " ")
+				safe_to_execute := true
+				if command_keyword == "cat" {
+					all_path_args_valid, invalid_path := all(args, path_is_valid)
+					if !all_path_args_valid && invalid_path != nil {
+						os.Stdout = original_stdout
+						safe_to_execute = false
+						print_no_such_file_or_directory(command_keyword, *invalid_path)
+					}
+				}
+				if safe_to_execute {
+					command_result := exec.Command(command_keyword, args...)
+					output, err := command_result.Output()
+					print_output_if_err_nil(string(output), err)
+				}
+
 			}
 
 		}
