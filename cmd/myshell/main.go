@@ -31,7 +31,7 @@ func get_output_or_err_message(output string, err error) {
 }
 
 func get_no_such_file_or_directory_message(cmd_keywrd string, dir string) {
-	fmt.Fprintln(os.Stderr, cmd_keywrd, ": "+dir+": No such file or directory")
+	fmt.Fprintln(os.Stderr, cmd_keywrd+": "+dir+": No such file or directory")
 }
 
 // boolean functions
