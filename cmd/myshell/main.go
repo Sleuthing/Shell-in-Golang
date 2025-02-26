@@ -22,7 +22,7 @@ var original_stdout = os.Stdout
 // print output if no error exists otherwise print error
 func get_output_or_err_message(output string, err error) string {
 	if err == nil {
-		return string(output)
+		return output
 		//fmt.Print(string(output))
 	} else {
 		return fmt.Sprintf("Error executing input: %s", err)
@@ -120,7 +120,7 @@ func all[T any](slice []T, fn func(T) bool) (bool, *T) {
 func main() {
 	for i := 0; i < 100; i++ {
 		fmt.Fprint(os.Stdout, "$ ")
-		var output_string string
+		// var output_string string
 		full_command, err := bufio.NewReader(os.Stdin).ReadString('\n')
 		clean_command := clean_command_clause(full_command)
 		command_sentence, output_path := check_for_stdout_redir(clean_command)
@@ -137,39 +137,41 @@ func main() {
 			//fmt.Println("logout")
 			os.Exit(0)
 		case "echo":
-			output_string = strings.Trim(arg_clause, "\"'")
-			//fmt.Println(strings.Trim(arg_clause, "\"'"))
+			// output_string = strings.Trim(arg_clause, "\"'") + "\n"
+			fmt.Println(strings.Trim(arg_clause, "\"'"))
 		case "pwd":
 			directory, err := os.Getwd()
-			output_string = get_output_or_err_message(directory, err)
-			// fmt.Println()
+			// output_string = get_output_or_err_message(directory, err) + "\n"
+			fmt.Println(get_output_or_err_message(directory, err))
+			fmt.Println()
 		case "cd":
 			if arg_clause == "~" {
 				os.Chdir(HOME)
 			} else if path_is_valid(arg_clause) {
 				os.Chdir(arg_clause)
 			} else {
-				output_string = get_no_such_file_or_directory_message(command_keyword, arg_clause)
+				// output_string = get_no_such_file_or_directory_message(command_keyword, arg_clause)
+				fmt.Println(get_no_such_file_or_directory_message(command_keyword, arg_clause))
 			}
 		case "type":
 			if is_builtin(arg_clause) {
-				// fmt.Println(arg_clause + " is a shell builtin")
-				output_string = arg_clause + " is a shell builtin"
+				fmt.Println(arg_clause + " is a shell builtin")
+				// output_string = arg_clause + " is a shell builtin" + "\n"
 			} else {
 				search_result := search_executable_path(arg_clause)
 				if search_result == "" {
-					// fmt.Println(arg_clause + ": not found")
-					output_string = arg_clause + ": not found"
+					fmt.Println(arg_clause + ": not found")
+					// output_string = arg_clause + ": not found" + "\n"
 				} else {
-					// fmt.Println(arg_clause + " is " + search_result)
-					output_string = arg_clause + " is " + search_result
+					fmt.Println(arg_clause + " is " + search_result)
+					// output_string = arg_clause + " is " + search_result + "\n"
 				}
 			}
 		default:
 			search_result := search_executable_path(command_keyword)
 			if search_result == "" {
-				output_string = clean_command + ": command not found"
-				// fmt.Println(clean_command + ": command not found")
+				// output_string = clean_command + ": command not found" + "\n"
+				fmt.Println(clean_command + ": command not found")
 			} else {
 				args := strings.Split(arg_clause, " ")
 				safe_to_execute := true
@@ -193,7 +195,8 @@ func main() {
 					// fmt.Println("nothing Happened")
 					command_result := exec.Command(command_keyword, args...)
 					output, err := command_result.Output()
-					output_string = get_output_or_err_message(string(output), err)
+					// output_string = get_output_or_err_message(string(output), err)
+					fmt.Print(get_output_or_err_message(string(output), err))
 				}
 
 			}
@@ -205,7 +208,7 @@ func main() {
 			fmt.Fprintln(os.Stderr, "Error reading input:", err)
 			os.Exit(1)
 		}
-		fmt.Println(output_string)
+		// fmt.Print(output_string)
 		os.Stdout = original_stdout
 	}
 }
