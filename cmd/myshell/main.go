@@ -193,6 +193,13 @@ func main() {
 				// }
 				if safe_to_execute {
 					// fmt.Println("nothing Happened")
+					if command_keyword == "cat" {
+						for i := 0; i > len(args); i++ {
+							if !path_is_valid(args[i]) {
+								fmt.Fprintln(os.Stderr, get_no_such_file_or_directory_message("cat", args[i]))
+							}
+						}
+					}
 					command_result := exec.Command(command_keyword, args...)
 					// command_result.Stdout = &stdoutBuf
 					// command_result.Stderr = &stderrBuf
