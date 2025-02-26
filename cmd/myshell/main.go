@@ -20,13 +20,13 @@ var original_stdout = os.Stdout
 // print functions
 
 // print output if no error exists otherwise print error
-func get_output_or_err_message(output string, err error) string {
+func get_output_or_err_message(output string, err error) {
 	if err == nil {
-		return output
-		//fmt.Print(string(output))
+		// return output
+		fmt.Print(string(output))
 	} else {
-		return fmt.Sprintf("Error executing input: %s", err)
-		//fmt.Fprintln(os.Stderr, "Error executing input:", err)
+		//return fmt.Sprintf("Error executing input: %s", err)
+		fmt.Fprintln(os.Stderr, "Error executing input:", err)
 	}
 }
 
@@ -142,7 +142,7 @@ func main() {
 		case "pwd":
 			directory, err := os.Getwd()
 			// output_string = get_output_or_err_message(directory, err) + "\n"
-			fmt.Println(get_output_or_err_message(directory, err))
+			get_output_or_err_message(directory, err)
 			fmt.Println()
 		case "cd":
 			if arg_clause == "~" {
@@ -194,9 +194,11 @@ func main() {
 				if safe_to_execute {
 					// fmt.Println("nothing Happened")
 					command_result := exec.Command(command_keyword, args...)
+					// command_result.Stdout = &stdoutBuf
+					// command_result.Stderr = &stderrBuf
 					output, err := command_result.Output()
 					// output_string = get_output_or_err_message(string(output), err)
-					fmt.Print(get_output_or_err_message(string(output), err))
+					get_output_or_err_message(string(output), err)
 				}
 
 			}
