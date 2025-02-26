@@ -174,7 +174,7 @@ func main() {
 				fmt.Println(clean_command + ": command not found")
 			} else {
 				args := strings.Split(arg_clause, " ")
-				safe_to_execute := true
+				// safe_to_execute := true
 				// if command_keyword == "cat" {
 				// 	for i=0;i<len(args);i++{
 				// 		command_result := exec.Command(command_keyword, args...)
@@ -191,22 +191,24 @@ func main() {
 				// 		output_string = get_no_such_file_or_directory_message(command_keyword, *invalid_path)
 				// 	}
 				// }
-				if safe_to_execute {
-					// fmt.Println("nothing Happened")
-					if command_keyword == "cat" {
-						for i := 0; i > len(args); i++ {
-							if !path_is_valid(args[i]) {
-								get_no_such_file_or_directory_message("cat", args[i])
-							}
+				// if safe_to_execute {
+
+				command_result := exec.Command(command_keyword, args...)
+				// command_result.Stdout = &stdoutBuf
+				// command_result.Stderr = &stderrBuf
+				output, err := command_result.Output()
+				// output_string = get_output_or_err_message(string(output), err)
+				if command_keyword == "cat" {
+					for i := 0; i < len(args); i++ {
+						if !path_is_valid(args[i]) {
+							get_no_such_file_or_directory_message("cat", args[i])
 						}
 					}
-					command_result := exec.Command(command_keyword, args...)
-					// command_result.Stdout = &stdoutBuf
-					// command_result.Stderr = &stderrBuf
-					output, err := command_result.Output()
-					// output_string = get_output_or_err_message(string(output), err)
+					fmt.Print(string(output))
+				} else {
 					get_output_or_err_message(string(output), err)
 				}
+				// }
 
 			}
 
