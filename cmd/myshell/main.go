@@ -30,8 +30,8 @@ func get_output_or_err_message(output string, err error) {
 	}
 }
 
-func get_no_such_file_or_directory_message(cmd_keywrd string, dir string) string {
-	return cmd_keywrd + ": " + dir + ": " + "No such file or directory"
+func get_no_such_file_or_directory_message(cmd_keywrd string, dir string) {
+	fmt.Fprintln(os.Stderr, cmd_keywrd, ": "+dir+": No such file or directory")
 }
 
 // boolean functions
@@ -151,7 +151,7 @@ func main() {
 				os.Chdir(arg_clause)
 			} else {
 				// output_string = get_no_such_file_or_directory_message(command_keyword, arg_clause)
-				fmt.Println(get_no_such_file_or_directory_message(command_keyword, arg_clause))
+				get_no_such_file_or_directory_message(command_keyword, arg_clause)
 			}
 		case "type":
 			if is_builtin(arg_clause) {
@@ -196,7 +196,7 @@ func main() {
 					if command_keyword == "cat" {
 						for i := 0; i > len(args); i++ {
 							if !path_is_valid(args[i]) {
-								fmt.Fprintln(os.Stderr, get_no_such_file_or_directory_message("cat", args[i]))
+								get_no_such_file_or_directory_message("cat", args[i])
 							}
 						}
 					}
