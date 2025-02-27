@@ -170,7 +170,7 @@ func main() {
 			defer stderr_file.Close()
 		}
 		if stderr_append_file != nil {
-			os.Stderr = stdout_append_file
+			os.Stderr = stderr_append_file
 			defer stderr_append_file.Close()
 		}
 		switch command_keyword {
