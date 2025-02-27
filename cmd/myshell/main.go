@@ -18,6 +18,7 @@ var HOME, _ = os.UserHomeDir()
 var stdout_redir = regexp.MustCompile(" > | 1> ")
 var stdout_append = regexp.MustCompile(" >> | 1>> ")
 var stderr_redir = regexp.MustCompile(" 2> ")
+var stderr_append = regexp.MustCompile(" 2>> ")
 var original_stdout = os.Stdout
 var original_stderr = os.Stderr
 
@@ -105,6 +106,14 @@ func check_for_stdout_append(arg string) (string, string) {
 	return arg, ""
 }
 
+func check_for_stderr_append(arg string) (string, string) {
+	if stderr_append.MatchString(arg) {
+		chunks := strings.Split(arg, " 2>> ")
+		return chunks[0], chunks[1]
+	}
+	return arg, ""
+}
+
 func get_output_file(output_path string, append bool) *os.File {
 	var outfile *os.File
 	var err error
@@ -139,24 +148,30 @@ func main() {
 		fmt.Fprint(os.Stdout, "$ ")
 		full_command, err := bufio.NewReader(os.Stdin).ReadString('\n')
 		clean_command := clean_command_clause(full_command)
-		command_sentence_without_stdout_append, stdappend_output_path := check_for_stdout_append(clean_command)
+		command_sentence_without_stderr_append, stderr_append_output_path := check_for_stderr_append(clean_command)
+		command_sentence_without_stdout_append, stdout_append_output_path := check_for_stdout_append(command_sentence_without_stderr_append)
 		command_sentence_without_stderr_redirection, stderr_output_path := check_for_stderr_redir(command_sentence_without_stdout_append)
 		command_sentence_without_stdout_redirection, stdout_output_path := check_for_stdout_redir(command_sentence_without_stderr_redirection)
 		command_keyword, arg_clause := process_command(command_sentence_without_stdout_redirection)
 		var stdout_file = get_output_file(stdout_output_path, false)
-		var stdappend_file = get_output_file(stdappend_output_path, true)
+		var stdout_append_file = get_output_file(stdout_append_output_path, true)
 		var stderr_file = get_output_file(stderr_output_path, false)
+		var stderr_append_file = get_output_file(stderr_append_output_path, true)
 		if stdout_file != nil {
 			os.Stdout = stdout_file
 			defer stdout_file.Close()
 		}
-		if stdappend_file != nil {
-			os.Stdout = stdappend_file
-			defer stdappend_file.Close()
+		if stdout_append_file != nil {
+			os.Stdout = stdout_append_file
+			defer stdout_append_file.Close()
 		}
 		if stderr_file != nil {
 			os.Stderr = stderr_file
 			defer stderr_file.Close()
+		}
+		if stderr_append_file != nil {
+			os.Stderr = stdout_append_file
+			defer stderr_append_file.Close()
 		}
 		switch command_keyword {
 		case "exit":
