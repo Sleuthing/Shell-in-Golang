@@ -55,8 +55,11 @@ func is_builtin(cmd_keywrd string) bool {
 // helper functions
 
 func clean_command_clause(str string) string {
-	str = strings.TrimSpace(strings.Trim(str, "\n"))
-	return str
+	return strings.TrimSpace(strings.Trim(str, "\n"))
+}
+
+func remove_surrounding_quotes(str string) string {
+	return strings.Trim(str, "\"'")
 }
 
 func process_command(command string) (string, string) {
@@ -80,6 +83,8 @@ func search_executable_path(exe_name string) string {
 	return ""
 }
 
+// ToDo: replace all check_redir functions with one function that also dynamically creates
+// regex variables instead of relying of global variables.
 func check_for_stdout_redir(arg string) (string, string) {
 	if stdout_redir.MatchString(arg) {
 		arg := strings.Replace(arg, " 1> ", " > ", -1)
@@ -118,6 +123,7 @@ func get_output_file(output_path string, append bool) *os.File {
 	var outfile *os.File
 	var err error
 	if output_path != "" {
+		output_path = remove_surrounding_quotes(output_path)
 		if append {
 			outfile, err = os.OpenFile(output_path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
 		} else {
@@ -178,7 +184,7 @@ func main() {
 			//fmt.Println("logout")
 			os.Exit(0)
 		case "echo":
-			fmt.Println(strings.Trim(arg_clause, "\"'"))
+			fmt.Println(remove_surrounding_quotes(arg_clause))
 		case "pwd":
 			directory, err := os.Getwd()
 			get_output_or_err_message(directory, err)
