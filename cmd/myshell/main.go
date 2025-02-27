@@ -184,7 +184,14 @@ func main() {
 			//fmt.Println("logout")
 			os.Exit(0)
 		case "echo":
-			fmt.Println(remove_surrounding_quotes(arg_clause))
+			arg_clause, old_arg_clause_length := remove_surrounding_quotes(arg_clause), len(arg_clause)
+			if old_arg_clause_length > len(arg_clause) {
+				fmt.Println(arg_clause)
+			} else {
+				fmt.Println(strings.Join(strings.Fields(arg_clause), " "))
+
+			}
+			// fmt.Println()
 		case "pwd":
 			directory, err := os.Getwd()
 			get_output_or_err_message(directory, err)
