@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
@@ -14,8 +15,10 @@ import (
 var builtin = []string{"exit", "echo", "type", "pwd", "cd"}
 var PATH = os.Getenv("PATH")
 var HOME, _ = os.UserHomeDir()
-var check_redir = regexp.MustCompile(" > | 1> ")
+var stdout_redir = regexp.MustCompile(" > | 1> ")
+var stderr_redir = regexp.MustCompile(" 2> ")
 var original_stdout = os.Stdout
+var original_stderr = os.Stderr
 
 // print functions
 
@@ -23,7 +26,7 @@ var original_stdout = os.Stdout
 func get_output_or_err_message(output string, err error) {
 	if err == nil {
 		// return output
-		fmt.Print(string(output))
+		fmt.Fprint(os.Stdout, string(output))
 	} else {
 		//return fmt.Sprintf("Error executing input: %s", err)
 		fmt.Fprintln(os.Stderr, "Error executing input:", err)
@@ -76,7 +79,7 @@ func search_executable_path(exe_name string) string {
 }
 
 func check_for_stdout_redir(arg string) (string, string) {
-	if check_redir.MatchString(arg) {
+	if stdout_redir.MatchString(arg) {
 		arg := strings.Replace(arg, " 1> ", " > ", -1)
 		chunks := strings.Split(arg, " > ")
 		return chunks[0], chunks[1]
@@ -84,23 +87,21 @@ func check_for_stdout_redir(arg string) (string, string) {
 	return arg, ""
 }
 
-// func get_output_file(output_path string) (*os.File, []byte)
+func check_for_stderr_redir(arg string) (string, string) {
+	if stderr_redir.MatchString(arg) {
+		chunks := strings.Split(arg, " 2> ")
+		return chunks[0], chunks[1]
+	}
+	return arg, ""
+}
+
 func get_output_file(output_path string) *os.File {
-	// var old_content []byte
-	// fmt.Println("length of output_path: " + string(len(output_path)))
 	if output_path != "" {
-		// search_result := search_executable_path(output_path)
-		// fmt.Println(search_result)
-		// if search_result != "" {
-		// old_content, _ = os.ReadFile(search_result)
-		// fmt.Println(old_content)
-		// }
 		outfile, err := os.Create(output_path)
 
 		if err != nil {
 			panic(err)
 		}
-		// return outfile, old_content
 		return outfile
 	}
 	return nil
@@ -120,17 +121,20 @@ func all[T any](slice []T, fn func(T) bool) (bool, *T) {
 func main() {
 	for i := 0; i < 100; i++ {
 		fmt.Fprint(os.Stdout, "$ ")
-		// var output_string string
 		full_command, err := bufio.NewReader(os.Stdin).ReadString('\n')
 		clean_command := clean_command_clause(full_command)
-		command_sentence, output_path := check_for_stdout_redir(clean_command)
-		command_keyword, arg_clause := process_command(command_sentence)
-		// var outfile, original_file_content = get_output_file(output_path)
-		var outfile = get_output_file(output_path)
-		if outfile != nil {
-			// fmt.Println(original_file_content)
-			os.Stdout = outfile
-			defer outfile.Close()
+		command_sentence_without_stderr_redirection, stderr_output_path := check_for_stderr_redir(clean_command)
+		command_sentence_without_stdout_redirection, stdout_output_path := check_for_stdout_redir(command_sentence_without_stderr_redirection)
+		command_keyword, arg_clause := process_command(command_sentence_without_stdout_redirection)
+		var stdout_file = get_output_file(stdout_output_path)
+		var stderr_file = get_output_file(stderr_output_path)
+		if stdout_file != nil {
+			os.Stdout = stdout_file
+			defer stdout_file.Close()
+		}
+		if stderr_file != nil {
+			os.Stderr = stderr_file
+			defer stdout_file.Close()
 		}
 		switch command_keyword {
 		case "exit":
@@ -174,41 +178,23 @@ func main() {
 				fmt.Println(clean_command + ": command not found")
 			} else {
 				args := strings.Split(arg_clause, " ")
-				// safe_to_execute := true
-				// if command_keyword == "cat" {
-				// 	for i=0;i<len(args);i++{
-				// 		command_result := exec.Command(command_keyword, args...)
-				// 		output, err := command_result.Output()
-				// 		output_string+=string(output)+"\n"
-
-				// 	}
-				// 	all_path_args_valid, invalid_path := all(args, path_is_valid)
-				// 	if !all_path_args_valid && invalid_path != nil {
-				// 		os.Stdout = original_stdout
-				// 		// outfile.Write(original_file_content)
-				// 		// fmt.Println("something Happened")
-				// 		safe_to_execute = false
-				// 		output_string = get_no_such_file_or_directory_message(command_keyword, *invalid_path)
-				// 	}
-				// }
-				// if safe_to_execute {
 
 				command_result := exec.Command(command_keyword, args...)
-				// command_result.Stdout = &stdoutBuf
-				// command_result.Stderr = &stderrBuf
-				output, err := command_result.Output()
-				// output_string = get_output_or_err_message(string(output), err)
-				if command_keyword == "cat" {
-					for i := 0; i < len(args); i++ {
-						if !path_is_valid(args[i]) {
-							get_no_such_file_or_directory_message("cat", args[i])
-						}
-					}
-					fmt.Print(string(output))
+
+				var stdout, stderr bytes.Buffer
+				command_result.Stdout = &stdout
+				command_result.Stderr = &stderr
+
+				err := command_result.Run()
+
+				if _, error_assertion_success := err.(*exec.ExitError); error_assertion_success {
+					fmt.Fprint(os.Stdout, stdout.String())
+					fmt.Fprint(os.Stderr, stderr.String())
+				} else if err != nil {
+					fmt.Printf("Failed to run command: %v\n", err)
 				} else {
-					get_output_or_err_message(string(output), err)
+					fmt.Fprint(os.Stdout, stdout.String())
 				}
-				// }
 
 			}
 
@@ -219,7 +205,7 @@ func main() {
 			fmt.Fprintln(os.Stderr, "Error reading input:", err)
 			os.Exit(1)
 		}
-		// fmt.Print(output_string)
 		os.Stdout = original_stdout
+		os.Stderr = original_stderr
 	}
 }
