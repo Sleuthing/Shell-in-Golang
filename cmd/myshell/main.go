@@ -15,10 +15,6 @@ import (
 var builtin = []string{"exit", "echo", "type", "pwd", "cd"}
 var PATH = os.Getenv("PATH")
 var HOME, _ = os.UserHomeDir()
-var stdout_redir = regexp.MustCompile(" > | 1> ")
-var stdout_append = regexp.MustCompile(" >> | 1>> ")
-var stderr_redir = regexp.MustCompile(" 2> ")
-var stderr_append = regexp.MustCompile(" 2>> ")
 var original_stdout = os.Stdout
 var original_stderr = os.Stderr
 
@@ -83,37 +79,10 @@ func search_executable_path(exe_name string) string {
 	return ""
 }
 
-// ToDo: replace all check_redir functions with one function that also dynamically creates
-// regex variables instead of relying of global variables.
-func check_for_stdout_redir(arg string) (string, string) {
-	if stdout_redir.MatchString(arg) {
-		arg := strings.Replace(arg, " 1> ", " > ", -1)
-		chunks := strings.Split(arg, " > ")
-		return chunks[0], chunks[1]
-	}
-	return arg, ""
-}
-
-func check_for_stderr_redir(arg string) (string, string) {
-	if stderr_redir.MatchString(arg) {
-		chunks := strings.Split(arg, " 2> ")
-		return chunks[0], chunks[1]
-	}
-	return arg, ""
-}
-
-func check_for_stdout_append(arg string) (string, string) {
-	if stdout_append.MatchString(arg) {
-		arg := strings.Replace(arg, " 1>> ", " >> ", -1)
-		chunks := strings.Split(arg, " >> ")
-		return chunks[0], chunks[1]
-	}
-	return arg, ""
-}
-
-func check_for_stderr_append(arg string) (string, string) {
-	if stderr_append.MatchString(arg) {
-		chunks := strings.Split(arg, " 2>> ")
+func check_for_redir(arg string, split_str string) (string, string) {
+	var regex_match = regexp.MustCompile(split_str)
+	if regex_match.MatchString(arg) {
+		chunks := strings.Split(arg, split_str)
 		return chunks[0], chunks[1]
 	}
 	return arg, ""
@@ -138,26 +107,17 @@ func get_output_file(output_path string, append bool) *os.File {
 	return nil
 }
 
-// all checks if all elements in the slice satisfy the condition defined by fn
-// and returns problematic element if found
-// func all[T any](slice []T, fn func(T) bool) (bool, *T) {
-// 	for _, item := range slice {
-// 		if !fn(item) {
-// 			return false, &item
-// 		}
-// 	}
-// 	return true, nil
-// }
-
 func main() {
 	for i := 0; i < 100; i++ {
 		fmt.Fprint(os.Stdout, "$ ")
 		full_command, err := bufio.NewReader(os.Stdin).ReadString('\n')
 		clean_command := clean_command_clause(full_command)
-		command_sentence_without_stderr_append, stderr_append_output_path := check_for_stderr_append(clean_command)
-		command_sentence_without_stdout_append, stdout_append_output_path := check_for_stdout_append(command_sentence_without_stderr_append)
-		command_sentence_without_stderr_redirection, stderr_output_path := check_for_stderr_redir(command_sentence_without_stdout_append)
-		command_sentence_without_stdout_redirection, stdout_output_path := check_for_stdout_redir(command_sentence_without_stderr_redirection)
+		clean_command = strings.Replace(clean_command, " 1> ", " > ", -1)
+		clean_command = strings.Replace(clean_command, " 1>> ", " >> ", -1)
+		command_sentence_without_stderr_append, stderr_append_output_path := check_for_redir(clean_command, " 2>> ")
+		command_sentence_without_stdout_append, stdout_append_output_path := check_for_redir(command_sentence_without_stderr_append, " >> ")
+		command_sentence_without_stderr_redirection, stderr_output_path := check_for_redir(command_sentence_without_stdout_append, " 2> ")
+		command_sentence_without_stdout_redirection, stdout_output_path := check_for_redir(command_sentence_without_stderr_redirection, " > ")
 		command_keyword, arg_clause := process_command(command_sentence_without_stdout_redirection)
 		var stdout_file = get_output_file(stdout_output_path, false)
 		var stdout_append_file = get_output_file(stdout_append_output_path, true)
@@ -184,13 +144,14 @@ func main() {
 			//fmt.Println("logout")
 			os.Exit(0)
 		case "echo":
-			arg_clause, old_arg_clause_length := remove_surrounding_quotes(arg_clause), len(arg_clause)
-			if old_arg_clause_length > len(arg_clause) {
-				fmt.Println(arg_clause)
-			} else {
-				fmt.Println(strings.Join(strings.Fields(arg_clause), " "))
+			arg_clause, _ := remove_surrounding_quotes(arg_clause), len(arg_clause)
+			fmt.Println(strings.Join(strings.Fields(arg_clause), " "))
+			// if old_arg_clause_length > len(arg_clause) {
+			// 	fmt.Println(arg_clause)
+			// } else {
+			// 	fmt.Println(strings.Join(strings.Fields(arg_clause), " "))
 
-			}
+			// }
 			// fmt.Println()
 		case "pwd":
 			directory, err := os.Getwd()
